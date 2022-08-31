@@ -8,11 +8,11 @@ This repository implements supervised contrastive loss in combination with cross
 
 This package needs an input txt file with the data list for training and testing. To initiate the stage-1 training, please use the below command.
 
- > python yoga_classification_training_scmcl_stage1.py -a effnetv2_s --epochs 300 --gpu-id 0 -c >path where checkpoints to be saved< --train-batch 15 --test-batch 2 --optuna_study_db sqlite:///./>path where optuna db to be saved<
+ > python yoga_classification_training_scmcl_stage1.py -a effnetv2_s --epochs 300 --gpu-id 0 -c <'path where checkpoints to be saved> --train-batch 15 --test-batch 2 --optuna_study_db sqlite:///./<'path where optuna db to be saved>
  
  To initiate stage-2 training, please use the below command.
  
- > python yoga_classification_training_stage2.py -a effnetv2_s --epochs 300 --gpu-id 0 -c >path where checkpoints to be saved< --train-batch 26 --test-batch 13 --weights_load >path to the best model saved from stage-1<  --optuna_study_db sqlite:///./>path where optuna db to be saved<
+ > python yoga_classification_training_stage2.py -a effnetv2_s --epochs 300 --gpu-id 0 -c <'path where checkpoints to be saved> --train-batch 26 --test-batch 13 --weights_load <'path to the best model saved from stage-1>  --optuna_study_db sqlite:///.<'path where optuna db to be saved>
  
  
 ### Architecture Overview:
