@@ -227,7 +227,11 @@ def objective(trial) :
     # define weights for cross entropy loss
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda()
-    criterion_cscl = SupConLoss(temperature=0.07)
+    sample_temp = 0.2
+    base_sample = 0.07
+    criterion_cscl6 = SupConLoss(temperature=sample_temp,base_temperature=base_sample,radius=1,cos_margin=0.35)
+    criterion_cscl20 = SupConLoss(temperature=sample_temp,base_temperature=base_sample,radius=3,cos_margin=0.35)
+    criterion_cscl82 = SupConLoss(temperature=sample_temp,base_temperature=base_sample,radius=13,cos_margin=0.35)
     
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
 
@@ -279,7 +283,7 @@ def objective(trial) :
 
         print('Epoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, lr))
 
-        train_loss, train_acc, train_yoga6_top1_avg, train_yoga20_top1_avg, train_yoga82_top1_avg = train(train_loader, model, criterion, criterion_cscl, optimizer, epoch, use_cuda)
+        train_loss, train_acc, train_yoga6_top1_avg, train_yoga20_top1_avg, train_yoga82_top1_avg = train(train_loader, model, criterion, criterion_cscl6, criterion_cscl20, criterion_cscl82, optimizer, epoch, use_cuda)
         test_loss, test_acc, test_yoga6_top1_avg, test_yoga20_top1_avg, test_yoga82_top1_avg, test_yoga6_top5_avg, test_yoga20_top5_avg, test_yoga82_top5_avg = test(val_loader, model, criterion, epoch, use_cuda)
 
         # append logger file
@@ -313,7 +317,7 @@ def objective(trial) :
     return best_acc
 
 
-def train(train_loader, model, criterion, criterion_cscl, optimizer, epoch, use_cuda):
+def train(train_loader, model, criterion, criterion_cscl6, criterion_cscl20, criterion_cscl82, optimizer, epoch, use_cuda):
     # switch to train mode
     model.train()
 
@@ -339,7 +343,7 @@ def train(train_loader, model, criterion, criterion_cscl, optimizer, epoch, use_
         #print(yoga6_targets, yoga20_targets, yoga82_targets)
         inputs = torch.cat([inputs[0], inputs[1]], dim=0)
         if use_cuda:
-            inputs = inputs.cuda()
+            inputs = inputs.cuda(non_blocking=True)
             yoga6_targets = yoga6_targets.cuda(non_blocking=True)
             yoga20_targets = yoga20_targets.cuda(non_blocking=True)
             yoga82_targets = yoga82_targets.cuda(non_blocking=True)
@@ -363,13 +367,13 @@ def train(train_loader, model, criterion, criterion_cscl, optimizer, epoch, use_
         yoga20_loss = criterion(yoga20_outputs1, yoga20_targets)
         yoga82_loss = criterion(yoga82_outputs1, yoga82_targets)
         
-        yoga6_cscl_loss = criterion_cscl(yoga6_features, yoga6_targets)
-        yoga20_cscl_loss = criterion_cscl(yoga20_features, yoga20_targets)
-        yoga82_cscl_loss = criterion_cscl(yoga82_features, yoga82_targets)
+        yoga6_cscl_loss = criterion_cscl6(yoga6_features, yoga6_targets)
+        yoga20_cscl_loss = criterion_cscl20(yoga20_features, yoga20_targets)
+        yoga82_cscl_loss = criterion_cscl82(yoga82_features, yoga82_targets)
         
-        yoga6_simcl_loss = criterion_cscl(yoga6_features)
-        yoga20_simcl_loss = criterion_cscl(yoga20_features)
-        yoga82_simcl_loss = criterion_cscl(yoga82_features)
+        yoga6_simcl_loss = criterion_cscl6(yoga6_features)
+        yoga20_simcl_loss = criterion_cscl20(yoga20_features)
+        yoga82_simcl_loss = criterion_cscl82(yoga82_features)
         
         
 
@@ -452,7 +456,7 @@ def test(val_loader, model, criterion, epoch, use_cuda):
         data_time.update(time.time() - end)
 
         if use_cuda:
-            inputs, yoga6_targets, yoga20_targets, yoga82_targets = inputs.cuda(), yoga6_targets.cuda(), yoga20_targets.cuda(), yoga82_targets.cuda()
+            inputs, yoga6_targets, yoga20_targets, yoga82_targets = inputs.cuda(non_blocking=True), yoga6_targets.cuda(non_blocking=True), yoga20_targets.cuda(non_blocking=True), yoga82_targets.cuda(non_blocking=True)
         with torch.no_grad():
             inputs, yoga6_targets, yoga20_targets, yoga82_targets = torch.autograd.Variable(inputs), torch.autograd.Variable(yoga6_targets), torch.autograd.Variable(yoga20_targets), torch.autograd.Variable(yoga82_targets)
 
